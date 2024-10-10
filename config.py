@@ -1,1 +1,1 @@
-k8s_admin_conf_path = "/home/lin/.kube/config"
+K8S_ADMIN_CONF_PATH = "/etc/kubernetes/admin.conf"

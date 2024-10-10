@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: limit-deployment-policy
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+  - name: limit-deployments-per-user
+    match:
+      resources:
+        kinds:
+        - Deployment
+    preconditions:
+      all:
+      - key: "{{ request.userInfo.username }}"
+        operator: NotEquals
+        value: "Kubernetes-admin"
+      - key: "{{ regex_match('^system:serviceaccount:.*', '{{request.userInfo.username}}') }}"
+        operator: NotEquals
+        value: true
+      - key: "{{ request.operation }}"
+        operator: Equals
+        value: CREATE
+    context:
+    - name: deploymentCount
+      apiCall:
+        urlPath: "/apis/apps/v1/namespaces/{{ request.namespace }}/deployments"
+        jmesPath: "items[?metadata.labels.owner=='{{ request.userInfo.username }}'] | length(@)"
+    validate:
+      message: "User '{{ request.userInfo.username }}' cannot create more than 2 deployments with label 'owner: {{ request.userInfo.username }}' in this namespace."
+      deny:
+        conditions:
+        - key: "{{ deploymentCount }}"
+          operator: GreaterThanOrEquals
+          value: 2
+

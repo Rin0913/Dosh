@@ -1,4 +1,4 @@
-from kubernetes import client, config
+from kubernetes import client
 from kubernetes.client.rest import ApiException
 
 
@@ -61,10 +61,9 @@ def list_deployments(namespace):
     Return a list of deployment names.
     """
     apps_v1 = client.AppsV1Api()
-    
+
     try:
-        deployments = apps_v1.list_namespaced_deployment(namespace=namespace)
-        deployment_names = [deployment.metadata.name for deployment in deployments.items]
+        apps_v1.list_namespaced_deployment(namespace=namespace)
         return True
     except ApiException as e:
         print(f"Failed to list deployments: {e}")
@@ -85,18 +84,24 @@ def find_pod_by_deployment(namespace, deployment_name):
     core_v1 = client.CoreV1Api()
 
     try:
-        deployment = apps_v1.read_namespaced_deployment(name=deployment_name, namespace=namespace)
-        pod_label_selector = ",".join([f"{k}={v}" for k, v in deployment.spec.selector.match_labels.items()])
+        deployment = apps_v1.read_namespaced_deployment(
+            name=deployment_name,
+            namespace=namespace
+        )
+        pod_label_selector = ",".join([
+            f"{k}={v}" for k, v in deployment.spec.selector.match_labels.items()
+        ])
         pods = core_v1.list_namespaced_pod(namespace=namespace, label_selector=pod_label_selector)
 
         if not pods.items:
-            raise Exception(f"No pod found in deployment {deployment_name}.")
+            raise FileNotFoundError() # I am too lazy to write an exception class.
 
         first_pod_name = pods.items[0].metadata.name
         return first_pod_name
 
     except ApiException as e:
-        print(f"Error while searching for deployment {deployment_name} in namespace {namespace}: {e}")
+        print(f"Error while searching for deployment {deployment_name}"
+               " in namespace {namespace}:", e)
         return False
 
 def check_exec_permission(namespace, deployment_name):
@@ -125,11 +130,10 @@ def check_exec_permission(namespace, deployment_name):
         if response.status.allowed:
             print("User has permission to create pods/exec")
             return True
-        else:
-            print("User does NOT have permission to create pods/exec")
-            return False
+
+        print("User does NOT have permission to create pods/exec")
+        return False
 
     except ApiException as e:
         print(f"Exception when calling create_self_subject_access_review: {e}")
         return False
-

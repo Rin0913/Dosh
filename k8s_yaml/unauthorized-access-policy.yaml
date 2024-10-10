@@ -1,0 +1,70 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-unauthorized-access
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+  - name: restrict-deployment-operations
+    match:
+      resources:
+        kinds:
+        - Deployment
+        - Pod
+    preconditions:
+      all:
+      - key: "{{ request.userInfo.username }}"
+        operator: NotEquals
+        value: "kubernetes-admin"
+      - key: "{{ regex_match('^system:serviceaccount:.*', '{{request.userInfo.username}}') }}"
+        operator: NotEquals
+        value: true
+      - key: "{{ request.operation }}"
+        operator: In
+        value:
+          - CONNECT
+          - DELETE
+    validate:
+      message: "User '{{ request.userInfo.username }}' is not allowed to {{ request.operation }} the deployment unless they are the owner."
+      deny:
+        conditions:
+        - key: "{{ request.object.metadata.labels.owner }}"
+          operator: NotEquals
+          value: "{{ request.userInfo.username }}"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-pod-exec-attach
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+  - name: restrict-pod-exec-attach
+    match:
+      resources:
+        kinds:
+        - Pod/exec
+        - Pod/attach
+    context:
+    - name: podLabel
+      apiCall:
+        urlPath: "/api/v1/namespaces/{{request.namespace}}/pods/{{request.name}}"
+        jmesPath: "metadata.labels.owner || ''"
+    preconditions:
+      all:
+      - key: "{{ request.userInfo.username }}"
+        operator: NotEquals
+        value: "kubernetes-admin"
+      - key: "{{ regex_match('^system:serviceaccount:.*', '{{request.userInfo.username}}') }}"
+        operator: NotEquals
+        value: true
+    validate:
+      message: "User '{{ request.userInfo.username }}' is not allowed to {{ request.subResource }} the Pod unless they are the owner."
+      deny:
+        conditions:
+        - key: "{{ podLabel }}"
+          operator: NotEquals
+          value: "{{ request.userInfo.username }}"
+

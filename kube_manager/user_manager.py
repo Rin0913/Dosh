@@ -9,18 +9,15 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from ruamel.yaml import YAML
 from kubernetes import client, config
-from time import sleep
 
 class UserManager():
 
     def __init__(self, admin_conf_path):
         self.yaml_parser = YAML()
         self.yaml_parser.preserve_quotes = True
-        def literal_representer(dumper, data):
-            return 
 
         self.yaml_parser.representer.add_representer(
-                str, 
+                str,
                 lambda dumper, data:
                     dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
         )
@@ -30,10 +27,17 @@ class UserManager():
             self.admin_conf = self.yaml_parser.load(stream)
 
         with open('./data/ca/private.key', 'rb') as ca_key_file:
-            self.ca_key = serialization.load_pem_private_key(ca_key_file.read(), password=None, backend=default_backend())
+            self.ca_key = serialization.load_pem_private_key(
+                ca_key_file.read(),
+                password=None,
+                backend=default_backend()
+            )
 
         with open('./data/ca/certificate.crt', 'rb') as ca_cert_file:
-            self.ca_cert = x509.load_pem_x509_certificate(ca_cert_file.read(), default_backend())
+            self.ca_cert = x509.load_pem_x509_certificate(
+                ca_cert_file.read(),
+                default_backend()
+            )
 
     def __generate_cert_key_pair(self, username):
         key = rsa.generate_private_key(

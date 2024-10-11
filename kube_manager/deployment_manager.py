@@ -12,27 +12,37 @@ class DeploymentManager:
 
     def create_deployment(self, username, image, deployment_name = None, command = None):
         apps_v1 = client.AppsV1Api()
+
         if not deployment_name:
             now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
             img_name = image.split(':')[0].replace('_','.')
             deployment_name = f"{username}-{now}-{img_name}-{random_string}"
+
+        resources = client.V1ResourceRequirements(
+            requests={"ephemeral-storage": "6Gi", "cpu": "0.1", "memory": "512Mi"},
+            limits={"ephemeral-storage": "6Gi", "cpu": "1", "memory": "512Mi"}
+        )
+
         if command is None or command.lower() == 'false':
             container = client.V1Container(
                 name="container",
                 image=image,
-                command=["/bin/sh", "-c", "while :; do sleep 10; done"]
+                command=["/bin/sh", "-c", "while :; do sleep 10; done"],
+                resources=resources
             )
         elif command.lower() == 'true':
             container = client.V1Container(
                 name="container",
-                image=image
+                image=image,
+                resources=resources
             )
         else:
             container = client.V1Container(
                 name="container",
                 image=image,
-                command = shlex.split(command)
+                command = shlex.split(command),
+                resources=resources
             )
         deployment_manifest = client.V1Deployment(
             metadata=client.V1ObjectMeta(

@@ -33,5 +33,5 @@ spec:
         conditions:
         - key: "{{ deploymentCount }}"
           operator: GreaterThanOrEquals
-          value: 2
+          value: 3
 

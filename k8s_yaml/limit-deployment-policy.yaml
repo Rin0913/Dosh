@@ -28,7 +28,7 @@ spec:
         urlPath: "/apis/apps/v1/namespaces/{{ request.namespace }}/deployments"
         jmesPath: "items[?metadata.labels.owner=='{{ request.userInfo.username }}'] | length(@)"
     validate:
-      message: "User '{{ request.userInfo.username }}' cannot create more than 2 deployments with label 'owner: {{ request.userInfo.username }}' in this namespace."
+      message: "User '{{ request.userInfo.username }}' is trying to exceed the deployment quota."
       deny:
         conditions:
         - key: "{{ deploymentCount }}"

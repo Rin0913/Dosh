@@ -16,6 +16,11 @@ Because of the most famous container tools Docker, it got its name, Docker Shell
 
 However, because of my strong interest in Kubernetes tech, and also feel interesting in this project, I decided to relaunch this project and start to learn Kubernetes during the development progress of this project. And I woule like to share my experiences in Kubernetes and the information of other interesting tools if I use in this project in the future.
 
+## Demo
+
+![](https://i.imgur.com/ciJGnRE.png)
+![](https://i.imgur.com/Y4zfSV7.png)
+
 ## Also See
 
 - [Kubernetes Tutorial](https://sandb0x.tw/index)

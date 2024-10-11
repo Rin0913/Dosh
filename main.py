@@ -1,11 +1,17 @@
 import readline # pylint: disable=unused-import
+import shlex
 from commands import command_list
+
+print("Enter `help` to get more information.")
 
 while True:
     try:
-        command = input("dosh> ").split()
+        command = shlex.split(input("dosh> "))
         if not command:
             continue
+    except ValueError as e:
+        print(f"Invalid Command: {e}")
+        continue
     except KeyboardInterrupt:
         print()
         continue

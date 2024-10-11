@@ -1,3 +1,6 @@
+# pylint: disable=R0801
+# The code is similar, however, it's different.
+
 from kubernetes import client
 from kubernetes.client.rest import ApiException
 

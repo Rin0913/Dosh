@@ -175,7 +175,7 @@ class UserManager():
     def revoke_user(self, username, namespace = "dosh"):
 
         kube_conf_path = os.path.join(self.data_dir, f"kube_configs/{username}.yaml")
-        if not os.path.exists(kube_config_path):
+        if not os.path.exists(kube_conf_path):
             return 0
 
         flag = 1
@@ -210,5 +210,5 @@ class UserManager():
                 print(f"Error code {e.status} occurs when deleting role: {e}")
                 flag = 0
 
-        os.remove(kube_config_path)
+        os.remove(kube_conf_path)
         return flag

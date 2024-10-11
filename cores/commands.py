@@ -11,14 +11,16 @@ command_list = {}
 deploymentManager = None    # pylint: disable=C0103
 username = None             # pylint: disable=C0103
 admin_list = None           # pylint: disable=C0103
+data_dir = None             # pylint: disable=C0103
 
-def init(username_from_main, admin_list_from_main, data_dir):
-    global deploymentManager, username, admin_list # pylint: disable=W0603
+def init(username_from_main, admin_list_from_main, data_dir_from_main):
+    global deploymentManager, username, admin_list, data_dir # pylint: disable=W0603
     # As a temporary solution, I will fix it later
-    kube_conf_path = os.path.join(data_dir, f'kube_configs/{username_from_main}.yaml')
+    kube_conf_path = os.path.join(data_dir_from_main, f'kube_configs/{username_from_main}.yaml')
     deploymentManager = DeploymentManager(kube_conf_path, 'dosh')
     username = username_from_main
     admin_list = admin_list_from_main
+    data_dir = data_dir_from_main
 
 def register_command(name, help_text):
     def decorator(func):
@@ -64,6 +66,7 @@ def list_containers():
         'target: The container you would like to attach.\n\t'
         'command: The command you would like to use in the container. Default: sh')
 def attach_command(target, command="sh"):
+    kube_conf_path = os.path.join(data_dir, f"kube_configs/{username}.yaml")
     pod = deploymentManager.find_pod_by_deployment(f"{username}-{target}")
 
     if not pod:
@@ -73,7 +76,7 @@ def attach_command(target, command="sh"):
     with subprocess.Popen(
         ["kubectl", "exec", "-it", pod.metadata.name,
          "-n", "dosh", "--", command],
-        env={"KUBECONFIG": f"./data/kube_configs/{username}.yaml"},
+        env={"KUBECONFIG": kube_conf_path},
         stdin=sys.stdin,
         stdout=sys.stdout,
         stderr=sys.stderr,

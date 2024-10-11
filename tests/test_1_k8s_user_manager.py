@@ -7,7 +7,7 @@ from tests.utils import (create_busybox_deployment,
                          check_exec_permission,
                          delete_busybox_deployment)
 
-manager = UserManager(config.K8S_ADMIN_CONF_PATH)
+manager = UserManager(config.K8S_ADMIN_CONF_PATH, "./data")
 
 def test_create_user():
     assert manager.create_user("u11")

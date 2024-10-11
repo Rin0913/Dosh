@@ -5,7 +5,7 @@ from tests.utils import (create_busybox_deployment,
 
 import config
 
-manager = UserManager(config.K8S_ADMIN_CONF_PATH)
+manager = UserManager(config.K8S_ADMIN_CONF_PATH, "./data")
 
 def test_quota_exceeding():
     manager.create_user("u21")

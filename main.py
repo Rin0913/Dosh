@@ -11,7 +11,7 @@ if len(sys.argv) > 1 and sys.argv[1].isnumeric():
     user.init(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR, int(sys.argv[1]))
 else:
     user.init(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR)
-    
+
 commands.init(user.username, config.ADMIN_LIST, config.DATA_DIR)
 
 print(f"Hello, {user.username}.")

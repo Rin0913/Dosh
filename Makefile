@@ -17,7 +17,7 @@ init-ca:
 	openssl req -x509 -new -nodes -key ./data/ca/private.key -sha256 -days 3650 -out ./data/ca/certificate.crt -subj "/CN=dosh.sandb0x.tw"
 
 init-env:
-	copy config.py.sample config.py
+	cp config.py.sample config.py
 	python3 ./utils/generate_entry.py > ./entry.c
 	gcc ./entry.c -o dosh
 	rm entry.c

@@ -7,9 +7,11 @@ def test_create_deployment():
     try:
         assert manager.create_deployment("u31",
                                          "ubuntu:latest",
+                                         "test3-11",
                                          "while true; do sleep 10; done")
         assert manager.create_deployment("u31",
                                          "ubuntu:latest",
+                                         "test3-12",
                                          "while true; do sleep 10; done")
         deployment_list = manager.list_deployments("u31")
         for d in deployment_list:
@@ -24,9 +26,11 @@ def test_list_deployments():
     try:
         assert manager.create_deployment("u32",
                                          "ubuntu:latest",
+                                         "test3-21",
                                          "while true; do sleep 10; done")
         assert manager.create_deployment("u32",
                                          "ubuntu:latest",
+                                         "test3-22",
                                          "while true; do sleep 10; done")
         deployment_list = manager.list_deployments("u32")
         assert len(deployment_list)
@@ -42,9 +46,11 @@ def test_delete_deployment():
     try:
         assert manager.create_deployment("u33",
                                          "ubuntu:latest",
+                                         "test3-31",
                                          "while true; do sleep 10; done")
         assert manager.create_deployment("u33",
                                          "ubuntu:latest",
+                                         "test3-32",
                                          "while true; do sleep 10; done")
         deployment_list = manager.list_deployments("u33")
         assert len(deployment_list)

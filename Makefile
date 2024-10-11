@@ -1,4 +1,4 @@
-.PHONY: test lint init init-k8s init-ca
+.PHONY: test lint init init-k8s init-ca init-config
 
 lint:
 	pylint ./
@@ -16,4 +16,7 @@ init-ca:
 	openssl genrsa -out ./data/ca/private.key 2048
 	openssl req -x509 -new -nodes -key ./data/ca/private.key -sha256 -days 3650 -out ./data/ca/certificate.crt -subj "/CN=dosh.sandb0x.tw"
 
-init: init-k8s init-ca
+init-config:
+	cp ./config.py.sample ./config.py
+
+init: init-k8s init-ca init-config

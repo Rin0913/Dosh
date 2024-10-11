@@ -6,16 +6,24 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 class DeploymentManager:
-    def __init__(self, kube_admin_conf_path, namespace):
-        config.load_kube_config(config_file=kube_admin_conf_path)
+    def __init__(self, kube_conf_path, namespace):
+        config.load_kube_config(config_file=kube_conf_path)
         self.namespace = namespace
 
-    def create_deployment(self, username, image, command = None):
+    def create_deployment(self, username, image, deployment_name = None, command = None):
         apps_v1 = client.AppsV1Api()
-        now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
-        deployment_name = f"{username}-{now}-{image.split(':')[0].replace('_','.')}-{random_string}"
-        if command is None:
+        if not deployment_name:
+            now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
+            img_name = image.split(':')[0].replace('_','.')
+            deployment_name = f"{username}-{now}-{img_name}-{random_string}"
+        if command is None or command.lower() == 'false':
+            container = client.V1Container(
+                name="container",
+                image=image,
+                command=["/bin/sh", "-c", "while :; do sleep 10; done"]
+            )
+        elif command.lower() == 'true':
             container = client.V1Container(
                 name="container",
                 image=image
@@ -71,7 +79,9 @@ class DeploymentManager:
                 namespace=self.namespace,
                 label_selector=f"owner={username}"
             )
+
             return [d.metadata.name for d in deployments.items]
+
         except ApiException as e:
             print(f"Failed to list deployments: {e}")
             return []
@@ -94,8 +104,7 @@ class DeploymentManager:
             if not pods.items:
                 return None
 
-            first_pod_name = pods.items[0].metadata.name
-            return first_pod_name
+            return pods.items[0]
 
         except ApiException as e:
             print(f"Error while searching for deployment {deployment_name}"

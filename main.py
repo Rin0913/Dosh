@@ -1,6 +1,13 @@
+#!/usr/bin/env python3
+
 import readline # pylint: disable=unused-import
 import shlex
-from commands import command_list
+
+import config
+from cores import user, commands
+
+user.init(config.K8S_ADMIN_CONF_PATH)
+commands.init(user.username, config.ADMIN_LIST)
 
 print("Enter `help` to get more information.")
 
@@ -18,11 +25,11 @@ while True:
     except EOFError:
         command = ["exit"]
 
-    if command[0] in command_list:
-        method = command_list[command[0]]
+    if command[0] in commands.command_list:
+        method = commands.command_list[command[0]]
         try:
             method[0](*command[1:])
-        except TypeError:
-            print(method[1])
+        except TypeError as e:
+            print(method[1], e)
     else:
         print("Invalid command:", command[0])

@@ -1,4 +1,5 @@
 import subprocess
+import os
 import sys
 from texttable import Texttable
 
@@ -11,11 +12,11 @@ deploymentManager = None    # pylint: disable=C0103
 username = None             # pylint: disable=C0103
 admin_list = None           # pylint: disable=C0103
 
-def init(username_from_main, admin_list_from_main):
+def init(username_from_main, admin_list_from_main, data_dir):
     global deploymentManager, username, admin_list # pylint: disable=W0603
     # As a temporary solution, I will fix it later
-
-    deploymentManager = DeploymentManager(f'./data/kube_configs/{username_from_main}.yaml', 'dosh')
+    kube_conf_path = os.path.join(data_dir, f'kube_configs/{username_from_main}.yaml')
+    deploymentManager = DeploymentManager(kube_conf_path, 'dosh')
     username = username_from_main
     admin_list = admin_list_from_main
 

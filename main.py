@@ -6,8 +6,8 @@ import shlex
 import config
 from cores import user, commands
 
-user.init(config.K8S_ADMIN_CONF_PATH)
-commands.init(user.username, config.ADMIN_LIST)
+user.init(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR)
+commands.init(user.username, config.ADMIN_LIST, config.DATA_DIR)
 
 print("Enter `help` to get more information.")
 

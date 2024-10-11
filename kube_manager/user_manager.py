@@ -12,7 +12,7 @@ from kubernetes import client, config
 
 class UserManager():
 
-    def __init__(self, admin_conf_path):
+    def __init__(self, admin_conf_path, data_dir):
         self.yaml_parser = YAML()
         self.yaml_parser.preserve_quotes = True
 
@@ -26,18 +26,20 @@ class UserManager():
         with open(admin_conf_path, "r", encoding="utf-8") as stream:
             self.admin_conf = self.yaml_parser.load(stream)
 
-        with open('./data/ca/private.key', 'rb') as ca_key_file:
+        with open(os.path.join(data_dir, 'ca/private.key'), 'rb') as ca_key_file:
             self.ca_key = serialization.load_pem_private_key(
                 ca_key_file.read(),
                 password=None,
                 backend=default_backend()
             )
 
-        with open('./data/ca/certificate.crt', 'rb') as ca_cert_file:
+        with open(os.path.join(data_dir, 'ca/certificate.crt'), 'rb') as ca_cert_file:
             self.ca_cert = x509.load_pem_x509_certificate(
                 ca_cert_file.read(),
                 default_backend()
             )
+
+        self.data_dir = data_dir
 
     def __generate_cert_key_pair(self, username):
         key = rsa.generate_private_key(
@@ -76,12 +78,13 @@ class UserManager():
         return private_key, cert_pem
 
     def create_user(self, username):
-        if os.path.exists(f"./data/kube_configs/{username}.yaml"):
+        kube_conf_path = os.path.join(self.data_dir, f"kube_configs/{username}.yaml")
+        if os.path.exists(kube_conf_path):
             return 0
 
         private_key, cert_pem = self.__generate_cert_key_pair(username)
 
-        kubeconfig = {
+        kube_config = {
             "apiVersion": "v1",
             "kind": "Config",
             "clusters": [
@@ -116,11 +119,10 @@ class UserManager():
         }
 
 
-        kubeconfig_path = f"./data/kube_configs/{username}.yaml"
-        with open(kubeconfig_path, "w", encoding="utf-8") as kubeconfig_file:
+        with open(kube_conf_path, "w", encoding="utf-8") as kube_config_file:
             stream = StringIO()
-            self.yaml_parser.dump(kubeconfig, stream)
-            kubeconfig_file.write(stream.getvalue())
+            self.yaml_parser.dump(kube_config, stream)
+            kube_config_file.write(stream.getvalue())
         print(f"User {username} is created.")
 
         return 1
@@ -172,7 +174,8 @@ class UserManager():
 
     def revoke_user(self, username, namespace = "dosh"):
 
-        if not os.path.exists(f"./data/kube_configs/{username}.yaml"):
+        kube_conf_path = os.path.join(self.data_dir, f"kube_configs/{username}.yaml")
+        if not os.path.exists(kube_config_path):
             return 0
 
         flag = 1
@@ -207,5 +210,5 @@ class UserManager():
                 print(f"Error code {e.status} occurs when deleting role: {e}")
                 flag = 0
 
-        os.remove(f"./data/kube_configs/{username}.yaml")
+        os.remove(kube_config_path)
         return flag

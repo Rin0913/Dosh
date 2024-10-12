@@ -17,12 +17,14 @@ def test_quota_exceeding():
     try:
         assert create_busybox_deployment("u21", "dosh", "test21")
         assert create_busybox_deployment("u21", "dosh", "test22")
-        assert not create_busybox_deployment("u21", "dosh", "test23")
+        assert create_busybox_deployment("u21", "dosh", "test23")
+        assert not create_busybox_deployment("u21", "dosh", "test24")
     finally:
         kube_config.load_kube_config(config_file=config.K8S_ADMIN_CONF_PATH)
         delete_busybox_deployment("dosh", "test21")
         delete_busybox_deployment("dosh", "test22")
         delete_busybox_deployment("dosh", "test23")
+        delete_busybox_deployment("dosh", "test24")
         manager.revoke_user("u21")
 
 def test_unauthorized_access():

@@ -5,14 +5,15 @@ import shlex
 import sys
 
 import config
-from cores import user, commands
+from cores.user import User
+from cores.commands import Command
 
 if len(sys.argv) > 1 and sys.argv[1].isnumeric():
-    user.init(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR, int(sys.argv[1]))
+    user = User(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR, int(sys.argv[1]))
 else:
-    user.init(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR)
+    user = User(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR)
 
-commands.init(user.username, config.ADMIN_LIST, config.DATA_DIR)
+commandHandler = Command(user.username, config.ADMIN_LIST, config.DATA_DIR)
 
 print(f"Hello, {user.username}.")
 print("Enter `help` to get more information.")
@@ -31,11 +32,4 @@ while True:
     except EOFError:
         command = ["exit"]
 
-    if command[0] in commands.command_list:
-        method = commands.command_list[command[0]]
-        try:
-            method[0](*command[1:])
-        except TypeError as e:
-            print(method[1], e)
-    else:
-        print("Invalid command:", command[0])
+    commandHandler.handle(command)

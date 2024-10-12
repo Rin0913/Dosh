@@ -1,5 +1,6 @@
 import base64
 import os
+import json
 from io import StringIO
 from datetime import datetime, timedelta
 from cryptography import x509
@@ -160,14 +161,15 @@ class UserManager():
             rbac_api.create_namespaced_role(namespace=namespace, body=role)
             print(f"Role created for user {username} in namespace {namespace}")
         except client.exceptions.ApiException as e:
-            print(f"Error creating role: {e}")
+            print("Error occurs when creating role:", json.loads(e.body)['message'])
             return 0
 
         try:
             rbac_api.create_namespaced_role_binding(namespace=namespace, body=role_binding)
             print(f"RoleBinding created for user {username} in namespace {namespace}")
         except client.exceptions.ApiException as e:
-            print(f"Error creating role binding: {e}")
+            print(json.loads(e.body)['message'])
+            print("Error occurs when binding role:", json.loads(e.body)['message'])
             return 0
 
         return 1

@@ -2,6 +2,7 @@ import random
 import string
 import datetime
 import shlex
+import json
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
@@ -68,7 +69,7 @@ class DeploymentManager:
             apps_v1.create_namespaced_deployment(namespace=self.namespace, body=deployment_manifest)
             return True
         except ApiException as e:
-            print(f"Failed to create deployment: {e}")
+            print("Failed to create deployment:", json.loads(e.body)['message'])
             return False
 
     def delete_deployment(self, deployment_name):
@@ -78,7 +79,7 @@ class DeploymentManager:
             apps_v1.delete_namespaced_deployment(name=deployment_name, namespace=self.namespace)
             return True
         except ApiException as e:
-            print(f"Failed to delete deployment: {e}")
+            print("Failed to delete deployment:", json.loads(e.body)['message'])
             return False
 
     def list_deployments(self, username):
@@ -93,7 +94,7 @@ class DeploymentManager:
             return [d.metadata.name for d in deployments.items]
 
         except ApiException as e:
-            print(f"Failed to list deployments: {e}")
+            print("Failed to list deployment:", json.loads(e.body)['message'])
             return []
 
     def find_pod_by_deployment(self, deployment_name):
@@ -117,6 +118,5 @@ class DeploymentManager:
             return pods.items[0]
 
         except ApiException as e:
-            print(f"Error while searching for deployment {deployment_name}"
-                   " in namespace {self.namespace}:", e)
+            print("Failed to find pod from deployment:", json.loads(e.body)['message'])
             return None

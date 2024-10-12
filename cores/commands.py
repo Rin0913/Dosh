@@ -70,7 +70,7 @@ def attach_command(target, command="sh"):
     pod = deploymentManager.find_pod_by_deployment(f"{username}-{target}")
 
     if not pod:
-        print(f"Container {target} has been terminated. Please destroy it manually.")
+        print(f"Container {target} is not ready.")
         return
 
     with subprocess.Popen(
@@ -114,3 +114,5 @@ def shell(command="/bin/bash"):
             bufsize=1
         ) as process:
             process.wait()
+    else:
+        print("Administrator Only.")

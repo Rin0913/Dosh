@@ -7,14 +7,19 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 class DeploymentManager:
-    def __init__(self, kube_conf_path, namespace, service_dns):
+
+    def __init__(self, kube_conf_path, namespace, service_dns, user_home_mount_point = None):
+
         config.load_kube_config(config_file=kube_conf_path)
         self.namespace = namespace
         self.service_dns = service_dns
+        self.user_home_mount_point = user_home_mount_point
 
     def create_deployment(self, username, image, deployment_name = None, command = None):
+
         apps_v1 = client.AppsV1Api()
         core_v1 = client.CoreV1Api()
+
         if not deployment_name:
             now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
@@ -26,67 +31,86 @@ class DeploymentManager:
             limits={"ephemeral-storage": "6Gi", "cpu": "1", "memory": "512Mi"}
         )
 
-        if command is None or command.lower() == 'false':
+        volume_mounts = []
+        volumes = []
+
+        if self.user_home_mount_point:
+            volume_mounts = [
+                client.V1VolumeMount(
+                    name="user-home",
+                    mount_path="/root"
+                )
+            ]
+            volumes = [
+                client.V1Volume(
+                    name="user-home",
+                    host_path = client.V1HostPathVolumeSource(
+                        path=self.user_home_mount_point,
+                        type="Directory"
+                    )
+                )
+            ]
+
+        if command is not None and command.lower() == 'true':
             container = client.V1Container(
                 name="container",
                 image=image,
-                command=["/bin/sh", "-c", "while :; do sleep 10; done"],
-                resources=resources
-            )
-        elif command.lower() == 'true':
-            container = client.V1Container(
-                name="container",
-                image=image,
-                resources=resources
+                resources=resources,
+                volume_mounts=volume_mounts
             )
         else:
+            if command is None or command.lower() == 'false':
+                command = ["/bin/sh", "-c", "while :; do sleep 10; done"]
+            else:
+                command = shlex.split(command)
             container = client.V1Container(
                 name="container",
                 image=image,
-                command = shlex.split(command),
-                resources=resources
+                command=command,
+                resources=resources,
+                volume_mounts=volume_mounts
             )
-        deployment_manifest = client.V1Deployment(
-            metadata=client.V1ObjectMeta(
-                name=deployment_name,
-                labels={"owner": username}
-            ),
-            spec=client.V1DeploymentSpec(
-                replicas=1,
-                selector=client.V1LabelSelector(
-                    match_labels={"app": deployment_name}
-                ),
-                template=client.V1PodTemplateSpec(
-                    metadata=client.V1ObjectMeta(labels={
-                                                    "app": deployment_name,
-                                                    "owner": username
-                    }),
-                    spec=client.V1PodSpec(containers=[container])
-                )
-            )
-        )
-
-        service_manifest = client.V1Service(
-            api_version="v1",
-            kind="Service",
-            metadata=client.V1ObjectMeta(
-                name=deployment_name,
-                labels={"app": deployment_name}
-            ),
-            spec=client.V1ServiceSpec(
-                cluster_ip="None",
-                selector={"app": deployment_name}
-            )
-        )
 
         try:
-            apps_v1.create_namespaced_deployment(namespace=self.namespace, body=deployment_manifest)
+            apps_v1.create_namespaced_deployment(namespace=self.namespace, body=client.V1Deployment(
+                metadata=client.V1ObjectMeta(
+                    name=deployment_name,
+                    labels={"owner": username}
+                ),
+                spec=client.V1DeploymentSpec(
+                    replicas=1,
+                    selector=client.V1LabelSelector(
+                        match_labels={"app": deployment_name}
+                    ),
+                    template=client.V1PodTemplateSpec(
+                        metadata=client.V1ObjectMeta(labels={
+                                                        "app": deployment_name,
+                                                        "owner": username
+                        }),
+                        spec=client.V1PodSpec(
+                            containers=[container],
+                            volumes=volumes
+                        )
+                    ),
+                )
+            ))
         except ApiException as e:
             print("Failed to create deployment:", json.loads(e.body)['message'])
             return False
 
         try:
-            core_v1.create_namespaced_service(namespace=self.namespace, body=service_manifest)
+            core_v1.create_namespaced_service(namespace=self.namespace, body=client.V1Service(
+                api_version="v1",
+                kind="Service",
+                metadata=client.V1ObjectMeta(
+                    name=deployment_name,
+                    labels={"app": deployment_name}
+                ),
+                spec=client.V1ServiceSpec(
+                    cluster_ip="None",
+                    selector={"app": deployment_name}
+                )
+            ))
         except ApiException as e:
             print("Failed to create dns record:", json.loads(e.body)['message'])
             print("You can still use your cantainer.")
@@ -94,6 +118,7 @@ class DeploymentManager:
         return True
 
     def delete_deployment(self, deployment_name):
+
         apps_v1 = client.AppsV1Api()
         core_v1 = client.CoreV1Api()
 
@@ -106,6 +131,7 @@ class DeploymentManager:
             return False
 
     def list_deployments(self, username):
+
         apps_v1 = client.AppsV1Api()
 
         try:
@@ -121,6 +147,7 @@ class DeploymentManager:
             return []
 
     def find_pod_by_deployment(self, deployment_name):
+
         apps_v1 = client.AppsV1Api()
         core_v1 = client.CoreV1Api()
 

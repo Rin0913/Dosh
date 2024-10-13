@@ -8,11 +8,18 @@ import config
 from cores import User, Command
 
 if len(sys.argv) > 1 and sys.argv[1].isnumeric():
-    user = User(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR, int(sys.argv[1]))
+    user = User(config, int(sys.argv[1]))
 else:
-    user = User(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR)
+    user = User(config)
 
-commandHandler = Command(user.username, config.ADMIN_LIST, config.DATA_DIR, config.K8S_SERVICE_DNS)
+
+USER_HOME_DIRECTORY = None
+if config.MOUNT_USER_HOME:
+    USER_HOME_DIRECTORY = user.get_home_directory()
+
+commandHandler = Command(config,
+                         user.username,
+                         USER_HOME_DIRECTORY)
 
 print(f"Hello, {user.username}.")
 print("Enter `help` to get more information.")

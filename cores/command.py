@@ -11,13 +11,16 @@ class Command:
 
     command_list: dict = {}
 
-    def __init__(self, username, admin_list, data_dir, k8s_service_dns):
-        self.kube_conf_path = os.path.join(data_dir, f'kube_configs/{username}.yaml')
-        self.deployment_manager = DeploymentManager(self.kube_conf_path, 'dosh', k8s_service_dns)
+    def __init__(self, config, username, home_directory):
         self.username = username
-        self.admin_list = admin_list
-        self.data_dir = data_dir
-        self.k8s_service_dns = k8s_service_dns
+        self.admin_list = config.ADMIN_LIST
+        self.data_dir = config.DATA_DIR
+        self.k8s_service_dns = config.K8S_SERVICE_DNS
+        self.kube_conf_path = os.path.join(self.data_dir, f'kube_configs/{username}.yaml')
+        self.deployment_manager = DeploymentManager(self.kube_conf_path,
+                                                    'dosh',
+                                                    self.k8s_service_dns,
+                                                    user_home_mount_point=home_directory)
 
     def __init_subclass__(cls):
         for method in vars(cls).values():

@@ -139,7 +139,7 @@ class UserManager():
                 ),
                 client.V1PolicyRule(
                     api_groups=[""],
-                    resources=["pods", "pods/exec", "pods/attach"],
+                    resources=["pods", "pods/exec", "pods/attach", "services"],
                     verbs=["get", "list", "create", "delete"]
                 ),
             ]

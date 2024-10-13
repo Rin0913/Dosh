@@ -1,7 +1,7 @@
 from kube_manager import DeploymentManager
 import config
 
-manager = DeploymentManager(config.K8S_ADMIN_CONF_PATH, 'dosh')
+manager = DeploymentManager(config.K8S_ADMIN_CONF_PATH, 'dosh', config.K8S_SERVICE_DNS)
 
 def test_create_deployment():
     try:

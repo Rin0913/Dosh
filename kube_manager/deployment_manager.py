@@ -7,13 +7,14 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 class DeploymentManager:
-    def __init__(self, kube_conf_path, namespace):
+    def __init__(self, kube_conf_path, namespace, service_dns):
         config.load_kube_config(config_file=kube_conf_path)
         self.namespace = namespace
+        self.service_dns = service_dns
 
     def create_deployment(self, username, image, deployment_name = None, command = None):
         apps_v1 = client.AppsV1Api()
-
+        core_v1 = client.CoreV1Api()
         if not deployment_name:
             now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
@@ -65,18 +66,40 @@ class DeploymentManager:
             )
         )
 
+        service_manifest = client.V1Service(
+            api_version="v1",
+            kind="Service",
+            metadata=client.V1ObjectMeta(
+                name=deployment_name,
+                labels={"app": deployment_name}
+            ),
+            spec=client.V1ServiceSpec(
+                cluster_ip="None",
+                selector={"app": deployment_name}
+            )
+        )
+
         try:
             apps_v1.create_namespaced_deployment(namespace=self.namespace, body=deployment_manifest)
-            return True
         except ApiException as e:
             print("Failed to create deployment:", json.loads(e.body)['message'])
             return False
 
+        try:
+            core_v1.create_namespaced_service(namespace=self.namespace, body=service_manifest)
+        except ApiException as e:
+            print("Failed to create dns record:", json.loads(e.body)['message'])
+            print("You can still use your cantainer.")
+
+        return True
+
     def delete_deployment(self, deployment_name):
         apps_v1 = client.AppsV1Api()
+        core_v1 = client.CoreV1Api()
 
         try:
             apps_v1.delete_namespaced_deployment(name=deployment_name, namespace=self.namespace)
+            core_v1.delete_namespaced_service(name=deployment_name, namespace=self.namespace)
             return True
         except ApiException as e:
             print("Failed to delete deployment:", json.loads(e.body)['message'])

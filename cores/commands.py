@@ -11,12 +11,13 @@ class Command:
 
     command_list: dict = {}
 
-    def __init__(self, username, admin_list, data_dir):
+    def __init__(self, username, admin_list, data_dir, k8s_service_dns):
         self.kube_conf_path = os.path.join(data_dir, f'kube_configs/{username}.yaml')
-        self.deployment_manager = DeploymentManager(self.kube_conf_path, 'dosh')
+        self.deployment_manager = DeploymentManager(self.kube_conf_path, 'dosh', k8s_service_dns)
         self.username = username
         self.admin_list = admin_list
         self.data_dir = data_dir
+        self.k8s_service_dns = k8s_service_dns
 
     def __init_subclass__(cls):
         for method in vars(cls).values():
@@ -28,8 +29,11 @@ class Command:
             try:
                 method = self.command_list[command[0]]
                 method[0](self, *command[1:])
-            except TypeError:
+            except TypeError as e:
                 print(method[1]) # pylint: disable=unsubscriptable-object
+                print(e)
+                print("If you believe it is the system's problem, "
+                      "please contact the administrator.")
         else:
             print(f"Invalid command: {command[0]}. Please enter `help` to get more information.")
 
@@ -61,15 +65,16 @@ class ContainerManagementCommands(Command):
 
     @register_command('list', 'list: List all containers.')
     def list_containers(self):
-        result = [("Container Number", "Status")]
+        result = [("Container Number", "DNS", "Status")]
 
         for d in self.deployment_manager.list_deployments(self.username):
             pod = self.deployment_manager.find_pod_by_deployment(d)
             d = d[len(self.username) + 1:] # To remove "{self.username}-" prefix.
-            result.append((d, pod.status.phase if pod else "Stopped"))
+            dns = f"{self.username}-{d}.dosh.svc.{self.k8s_service_dns}"
+            result.append((d, dns, pod.status.phase if pod else "Stopped"))
 
         table = Texttable()
-        table.set_cols_dtype(['t', 't'])
+        table.set_cols_dtype(['t', 't', 't'])
         table.add_rows(result)
         print(table.draw())
 

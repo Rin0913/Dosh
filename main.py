@@ -13,7 +13,7 @@ if len(sys.argv) > 1 and sys.argv[1].isnumeric():
 else:
     user = User(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR)
 
-commandHandler = Command(user.username, config.ADMIN_LIST, config.DATA_DIR)
+commandHandler = Command(user.username, config.ADMIN_LIST, config.DATA_DIR, config.K8S_SERVICE_DNS)
 
 print(f"Hello, {user.username}.")
 print("Enter `help` to get more information.")

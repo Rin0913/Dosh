@@ -1,3 +1,4 @@
 K8S_ADMIN_CONF_PATH = "/etc/kubernetes/admin.conf"
+K8S_SERVICE_DNS="cluster.local."
 ADMIN_LIST = ["rin"]
 DATA_DIR = "/usr/bin/dosh/data"

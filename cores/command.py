@@ -21,14 +21,18 @@ class Command:
 
     def __init_subclass__(cls):
         for method in vars(cls).values():
-            if callable(method) and hasattr(method, 'name') and hasattr(method, 'help_text'):
-                cls.command_list[getattr(method, 'name')] = (method, getattr(method, 'help_text'))
+            if callable(method) and hasattr(method, 'info'):
+                for info in getattr(method, 'info'):
+                    cls.command_list[info[0]] = (method, info[1], info[2])
 
     def handle(self, command):
         if command[0] in self.command_list:
             try:
                 method = self.command_list[command[0]]
-                method[0](self, *command[1:])
+                if method[2]:
+                    method[0](self, *command[0:])
+                else:
+                    method[0](self, *command[1:])
             except TypeError as e:
                 print(method[1]) # pylint: disable=unsubscriptable-object
                 print(e)
@@ -39,12 +43,20 @@ class Command:
 
 def register_command(name, help_text):
     def decorator(func):
-        func.name = name
-        func.help_text = help_text
+        func.info = [(name, help_text, False)]
+        return func
+    return decorator
+
+def register_system_command(name, help_text):
+    def decorator(func):
+        if not hasattr(func, 'info'):
+            func.info = []
+        func.info.append((name, help_text, True))
         return func
     return decorator
 
 class ContainerManagementCommands(Command):
+
     @register_command(
             'create',
             'create <image> {name} {command}: Create a container from the image.\n\t'
@@ -110,19 +122,34 @@ class ContainerManagementCommands(Command):
     def delete_container(self, target):
         self.deployment_manager.delete_deployment(f"{self.username}-{target}")
 
-class HelpCommand(Command):
+class SystemCommand(Command):
+
+    @register_system_command('date', 'date: Show the date and time.')
+    @register_system_command('passwd', 'passwd: Change you password.')
+    @register_system_command('ping', 'ping <remote>: Ping test.')
+    def system_command(self, command, *args):
+        with subprocess.Popen(
+            [command, *args],
+            stdin=sys.stdin,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            text=True,
+            bufsize=1
+        ) as process:
+            process.wait()
+
+class DoshCommand(Command):
+
     @register_command('help', 'help: Show this message.')
     def help(self):
         for cmd in self.command_list.items():
             print(cmd[1][1])
 
-class ExitCommand(Command):
     @register_command('exit', 'exit: Exit Dosh.')
     def exit(self):
         print("Goodbye!")
         sys.exit(0)
 
-class ShellCommand(Command):
     @register_command('shell', 'shell: Administrator only.')
     def shell(self, command="/bin/bash"):
         if self.username in self.admin_list:

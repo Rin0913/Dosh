@@ -5,8 +5,7 @@ import shlex
 import sys
 
 import config
-from cores.user import User
-from cores.commands import Command
+from cores import User, Command
 
 if len(sys.argv) > 1 and sys.argv[1].isnumeric():
     user = User(config.K8S_ADMIN_CONF_PATH, config.DATA_DIR, int(sys.argv[1]))

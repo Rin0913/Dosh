@@ -21,21 +21,34 @@ commandHandler = Command(config,
                          user.username,
                          USER_HOME_DIRECTORY)
 
-print(f"Hello, {user.username}.")
-print("Enter `help` to get more information.")
+def main():
+    print(f"Hello, {user.username}.")
+    print("Enter `help` to get more information.")
 
-while True:
-    try:
-        command = shlex.split(input("dosh> "))
-        if not command:
+    command = ""
+
+    while True:
+        try:
+            if command == "":
+                command = input("dosh> ")
+            else:
+                command += "\n" + input()
+            if not command:
+                continue
+            shlex.split(command)
+        except ValueError as e:
+            if str(e) != "No closing quotation":
+                command = ""
             continue
-    except ValueError as e:
-        print(f"Invalid Command: {e}")
-        continue
-    except KeyboardInterrupt:
-        print()
-        continue
-    except EOFError:
-        command = ["exit"]
+        except KeyboardInterrupt:
+            print()
+            continue
+        except EOFError:
+            command = "exit"
+            print()
 
-    commandHandler.handle(command)
+        commandHandler.handle(shlex.split(command))
+        command = ""
+
+if __name__ == '__main__':
+    main()

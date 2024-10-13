@@ -73,6 +73,7 @@ class ContainerManagementCommands(Command):
     def create_container(self, image, name = None, command = None):
         if name:
             name = f"{self.username}-{name}"
+
         if self.deployment_manager.create_deployment(self.username, image, name, command):
             print("Successfully create container.")
         else:
